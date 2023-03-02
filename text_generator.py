@@ -5,7 +5,7 @@ from string import punctuation
 from nltk import pos_tag
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
-from simplejson import load
+from json import load
 
 
 def generate_sentence_prefix():
@@ -32,7 +32,7 @@ def generate_sentence_prefix():
                 sentence_base[i] = word_synonyms[word_to_use]
 
     # Capitalize first word of sentence, most of the time
-    if randint(0, 5) > 0:
+    if sentence_base[0] and randint(0, 5) > 0: # changed because it is giving errors
         sentence_base[0] = sentence_base[0][0].upper() + sentence_base[0][1:]
 
     return ' '.join(sentence_base)
@@ -75,6 +75,10 @@ def get_readable_relative_position(position):
         text_position += 'right edge and vertical center'
     elif position['horizontal'] == 2 and position['vertical'] == 1:
         text_position += 'right edge and below center'
+    # center position
+    elif position['horizontal'] == 0 and position['vertical'] == 0:
+        text_position += 'center'
+    return text_position
 
 
 # The TextGenerator Abstract Base Class serves as the skeleton, or parent, for all text generation subclasses. On
@@ -82,7 +86,7 @@ def get_readable_relative_position(position):
 # (see example below).
 class TextGenerator(ABC):
     def __init__(self, file_path):
-        with open(file_path) as f:
+        with open(file_path, 'r', encoding='utf-8') as f: #fixed using utf-8
             self.metadata = load(f)
 
     @abstractmethod
@@ -96,15 +100,18 @@ class TextGenerator(ABC):
 class NoProperNounsTextGenerator(TextGenerator):
     # From: https://www.geeksforgeeks.org/python-text-summarizer/
     def generate(self):
+        # sanity checks
+        if ('desc' not in self.metadata) or (self.metadata['desc'] == ""):
+            return ''
         # Tokenizing the text
-        stopWords = set(stopwords.words("english"))
+        stopWords = set(stopwords.words('english'))
         words = word_tokenize(self.metadata['desc'])
 
         # Storing proper nouns so we can remove them
         proper_noun_indexes = []
         i = 0
         for (word, tag) in pos_tag(words):
-            if tag == 'NNP':
+            if tag == 'NNP' or tag == 'NNPS': # added plural proper nouns
                 proper_noun_indexes.append(i)
 
             i += 1
@@ -133,23 +140,44 @@ class NoProperNounsTextGenerator(TextGenerator):
 # colors used.
 class ObjectLocationTextGenerator(TextGenerator):
     def generate(self):
-        sentence_prefix = generate_prefix()
+        sentence_prefix = generate_sentence_prefix()
 
         # Process images
         images = []
-        for image in self.metadata['images']:
-            # Skip images that are not on screen
-            if not image['is_displayed']:
-                continue
-
-            images.append('an image of ' + image['alt'] + ' in the ')
-
+        if 'images' not in self.metadata:
+            pass
+        else:
+            for image in self.metadata['images']:
+                # Skip images that are not on screen
+                if not image['is_displayed']:
+                    continue
+                images.append('an image of ' + image['alt'] + ' in the ' + get_readable_relative_position(image['position']))
+        
+        # process buttons
+        buttons = []
+        if 'buttons' not in self.metadata:
+            pass
+        else:
+            for button in self.metadata['buttons']:
+                # Skip images that are not on screen
+                if not button['is_displayed']:
+                    continue
+                buttons.append('a button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
+        
+        return images, buttons
 
 # Create a subclass that describes navigation options (see "navbar" in the json).
 class NavDescriptionTextGenerator(TextGenerator):
     def generate(self):
-        pass
-
+        # check if navbar is not present or empty
+        if ('navbar' not in self.metadata) or self.metadata['navbar'] == '':
+            return []
+        # convert navbar options to list
+        if '\n' in self.metadata['navbar']: # if \n appears, it is the delimiter 
+            options = self.metadata['navbar'].split("\n")
+        else: # otherwise a space is delimiter
+            options = word_tokenize(self.metadata['navbar'])
+        return options
 
 # Create a subclass that summarizes the page based on text content and description metadata (and other metadata if it
 # works well). Feel free to use any public NLP APIs, as long as they are free or very affordable (< $0.01 per 500
@@ -166,8 +194,9 @@ class ContentSummaryTextGenerator(TextGenerator):
     def generate(self, words=20):
         pass
 
-
 # This is an example of a text generator subclass instantiation. All text generator subclasses require the file path
 # to metadata.
-desc_generator = NoProperNounsTextGenerator('data/00000015/metadata.json')
-print(desc_generator.generate())
+
+for i in range(100):
+    desc_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+    print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
