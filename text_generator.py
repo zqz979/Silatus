@@ -163,7 +163,10 @@ class ObjectLocationTextGenerator(TextGenerator):
                 # Skip images that are not on screen
                 if not button['is_displayed']:
                     continue
-                buttons.append('a button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
+                if 'alt' in button:
+                    buttons.append('a button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
+                else:
+                    buttons.append('a button of ' + button['text'] + ' in the ' + get_readable_relative_position(button['position']))
         
         return images, buttons
 
