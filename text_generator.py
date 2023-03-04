@@ -7,6 +7,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
+from gensim.summarization.summarizer import summarize
 
 def generate_sentence_prefix():
     all_synonyms = {
@@ -184,7 +185,11 @@ class NavDescriptionTextGenerator(TextGenerator):
 # words).
 class ContentSummaryTextGenerator(TextGenerator):
     def generate(self):
-        pass
+        if 'content' not in self.metadata:
+            return ''
+        content = self.metadata['content']
+        summary = summarize(content, word_count=50, split=True)
+        return ' '.join(summary)
 
 
 # BONUS: Create a subclass that combines elements from all other subclasses to generate text of variable length.
