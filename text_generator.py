@@ -190,6 +190,7 @@ class ContentSummaryTextGenerator(TextGenerator):
         if 'content' not in self.metadata:
             return ''
         content = self.metadata['content']
+        # word count specifies the max length of the summary
         summary = summarize(content, word_count=50, split=True)
         return ' '.join(summary)
 
