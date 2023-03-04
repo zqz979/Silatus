@@ -183,6 +183,8 @@ class NavDescriptionTextGenerator(TextGenerator):
 # Create a subclass that summarizes the page based on text content and description metadata (and other metadata if it
 # works well). Feel free to use any public NLP APIs, as long as they are free or very affordable (< $0.01 per 500
 # words).
+# using summarize() from gensim summarizing the page, textrank helps to identify the most important sentence in the text
+# return by concatenating those important sentence
 class ContentSummaryTextGenerator(TextGenerator):
     def generate(self):
         if 'content' not in self.metadata:
