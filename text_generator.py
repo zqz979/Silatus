@@ -203,7 +203,12 @@ class ContentSummaryTextGenerator(TextGenerator):
 # (i.e. if words=50, generate(words=50) can return 40 to 60 words).
 class ContentSummaryTextGenerator(TextGenerator):
     def generate(self, words=20):
-        pass
+        if 'content' not in self.metadata:
+            return ''
+        content = self.metadata['content']
+        # word count specifies the max length of the summary
+        summary = summarize(content, word_count=words, split=True)
+        return ' '.join(summary)
 
 # This is an example of a text generator subclass instantiation. All text generator subclasses require the file path
 # to metadata.
