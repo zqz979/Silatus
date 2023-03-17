@@ -7,7 +7,15 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
-from gensim.summarization.summarizer import summarize
+# import numpy as np
+# from sklearn.cluster import KMeans
+# from sklearn.feature_extraction.text import TfidfVectorizer
+import spacy
+from sklearn.metrics.pairwise import cosine_similarity
+# pre-trained models available in 'spacy'
+# It is trained on a large corpus of texts and it can be used to perform various nlp tasks such as part-of-speech tagging, 
+# named entity recognition, and dependency parsing.
+nlp = spacy.load('en_core_web_md')
 
 def generate_sentence_prefix():
     all_synonyms = {
@@ -186,33 +194,75 @@ class NavDescriptionTextGenerator(TextGenerator):
 # Create a subclass that summarizes the page based on text content and description metadata (and other metadata if it
 # works well). Feel free to use any public NLP APIs, as long as they are free or very affordable (< $0.01 per 500
 # words).
-# using summarize() from gensim summarizing the page, textrank helps to identify the most important sentence in the text
-# return by concatenating those important sentence
+# using 'spacy' model
+# md can be used to identify the most important sentences in the document based on their semantic similarity
+# this can be achieved by computing a vector representation for each sentence in the document using the pre-trained word embeddings, and then
+# clustering the sentences based on their vector similarity
+# extract the sentences that are closest to the centroid of each cluster are considered to be the most representative sentences
+# but still not accurate for part of the data (pending on fix, also the formatting)
 class ContentSummaryTextGenerator(TextGenerator):
+    # def __init__(self, text):
+    #     self.metadata = {'text': text}
+    #     self.nlp = spacy.load('en_core_web_md')
+        
+    # def generate(self):
+    #     if 'text' not in self.metadata:
+    #         return ''
+    #     text = self.metadata['text']
+    #     doc = self.nlp(text)
+    #     sentences = [sent.text for sent in doc.sents]
+        
+    #     # Use TF-IDF vectorization to extract important phrases from the text
+    #     vectorizer = TfidfVectorizer(stop_words='english')
+    #     X = vectorizer.fit_transform(sentences)
+    #     feature_names = np.array(vectorizer.get_feature_names())
+    #     kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
+        
+    #     # Identify the most important phrases based on the centroid of each cluster
+    #     centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
+    #     important_phrases = []
+    #     for i in range(3):
+    #         cluster_indices = np.where(kmeans.labels_ == i)[0]
+    #         important_phrases.append(feature_names[centroids[i, :5]])
+        
+    #     # Summarize the text by including the sentences that contain important phrases
+    #     summary = [sentence for sentence in sentences if len(sentence.split()) > 5 and any(phrase in sentence.lower() for phrase in important_phrases)]
+    #     return ' '.join(summary)
     def generate(self):
-        if 'content' not in self.metadata:
+        if 'text' not in self.metadata:
             return ''
-        content = self.metadata['content']
-        # word count specifies the max length of the summary
-        summary = summarize(content, word_count=50, split=True)
-        return ' '.join(summary)
 
+        doc = nlp(self.metadata['text'])
+        output = []
+        for sentence in doc.sents:
+        # check if the sentence contains at least one non-stopword token
+            if not any(token.is_stop == False for token in sentence):
+                continue
+            
+        # check if the first token is a proper noun (capitalized)
+            if not sentence[0].is_title:
+                continue
+        
+        # check if the sentence contains any digits or capitalized words
+            if any(token.is_digit or token.is_upper for token in sentence):
+                continue
+        
+        # add the sentence text to the output
+            output.append(str(sentence))
+        
+        return '\n'.join(output)
+    
 
 # BONUS: Create a subclass that combines elements from all other subclasses to generate text of variable length.
 # Number of words need not be exact. A variance of up to 20% should be allowable
 # (i.e. if words=50, generate(words=50) can return 40 to 60 words).
-class ContentSummaryTextGenerator(TextGenerator):
-    def generate(self, words=20):
-        if 'content' not in self.metadata:
-            return ''
-        content = self.metadata['content']
-        # word count specifies the max length of the summary
-        summary = summarize(content, word_count=words, split=True)
-        return ' '.join(summary)
+#class ContentSummaryTextGenerator(TextGenerator):
+
 
 # This is an example of a text generator subclass instantiation. All text generator subclasses require the file path
 # to metadata.
 
-for i in range(100):
-    desc_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+for i in range(10):
+    desc_generator = ContentSummaryTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
     print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
+
