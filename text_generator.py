@@ -7,15 +7,14 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
-# import numpy as np
-# from sklearn.cluster import KMeans
-# from sklearn.feature_extraction.text import TfidfVectorizer
 import spacy
-from sklearn.metrics.pairwise import cosine_similarity
-# pre-trained models available in 'spacy'
-# It is trained on a large corpus of texts and it can be used to perform various nlp tasks such as part-of-speech tagging, 
-# named entity recognition, and dependency parsing.
-nlp = spacy.load('en_core_web_md')
+
+import openai
+
+### USE the following command to download model
+### python -m spacy download en_core_web_trf ###
+
+# nlp = spacy.load("en_core_web_trf")
 
 def generate_sentence_prefix():
     all_synonyms = {
@@ -122,7 +121,6 @@ class NoProperNounsTextGenerator(TextGenerator):
         for (word, tag) in pos_tag(words):
             if tag == 'NNP' or tag == 'NNPS': # added plural proper nouns
                 proper_noun_indexes.append(i)
-
             i += 1
 
         # Storing stop words that sit next to proper nouns so we can remove them
@@ -135,7 +133,8 @@ class NoProperNounsTextGenerator(TextGenerator):
 
         removal_indexes = sorted(proper_noun_indexes + stop_word_removal_indexes, reverse=True)
         for idx in removal_indexes:
-            words.pop(idx)
+            if idx < len(words):
+                words.pop(idx)
 
         stripped_text = ''.join([' ' + word if word not in punctuation else word for word in words])[1:]
 
@@ -144,13 +143,11 @@ class NoProperNounsTextGenerator(TextGenerator):
             capitalized_sentences += sentence.capitalize() + ' '
         return capitalized_sentences[:-1]
 
-
+        
 # Create a subclass that describes the location of objects on the screen (i.e. buttons, images, inputs, iframes) and
 # colors used.
 class ObjectLocationTextGenerator(TextGenerator):
     def generate(self):
-        sentence_prefix = generate_sentence_prefix()
-
         # Process images
         images = []
         if 'images' not in self.metadata:
@@ -168,101 +165,98 @@ class ObjectLocationTextGenerator(TextGenerator):
             pass
         else:
             for button in self.metadata['buttons']:
-                # Skip images that are not on screen
+                # Skip buttons that are not on screen
                 if not button['is_displayed']:
-                    continue
+                    continue                
                 if 'alt' in button:
-                    buttons.append('a button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
+                    buttons.append('an ' + button["bg-color"] + ' colored button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
                 else:
-                    buttons.append('a button of ' + button['text'] + ' in the ' + get_readable_relative_position(button['position']))
+                    buttons.append('an ' + button["bg-color"] + ' colored button of ' + button['text'] + ' in the ' + get_readable_relative_position(button['position']))
         
-        return images, buttons
+        inputs = []
+        if 'inputs' not in self.metadata:
+            pass
+        else:
+            for input in self.metadata['inputs']:
+                # Skip inputs that are not on screen
+                if not input['is_displayed'] or input['type'] == 'hidden':
+                    continue                
+                buttons.append('an input field of ' + input['desc'] + ' in the ' + get_readable_relative_position(input['position']))
+
+        iframes = []
+        if 'iframes' not in self.metadata:
+            pass
+        else:
+            for iframe in self.metadata['iframes']:
+                # Skip inputs that are not on screen
+                if not iframe['is_displayed']:
+                    continue
+                if not iframe['is_video']:
+                    iframes.append('a non-video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
+                else:
+                    iframes.append('a video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
+
+        return images, buttons, inputs, iframes
 
 # Create a subclass that describes navigation options (see "navbar" in the json).
 class NavDescriptionTextGenerator(TextGenerator):
     def generate(self):
         # check if navbar is not present or empty
-        if ('navbar' not in self.metadata) or self.metadata['navbar'] == '':
+        if ('navbar' not in self.metadata):
             return []
         # convert navbar options to list
         if '\n' in self.metadata['navbar']: # if \n appears, it is the delimiter 
             options = self.metadata['navbar'].split("\n")
         else: # otherwise a space is delimiter
             options = word_tokenize(self.metadata['navbar'])
+        if '' in options:
+            options = options.remove('')
         return options
 
 # Create a subclass that summarizes the page based on text content and description metadata (and other metadata if it
 # works well). Feel free to use any public NLP APIs, as long as they are free or very affordable (< $0.01 per 500
 # words).
-# using 'spacy' model
-# md can be used to identify the most important sentences in the document based on their semantic similarity
-# this can be achieved by computing a vector representation for each sentence in the document using the pre-trained word embeddings, and then
-# clustering the sentences based on their vector similarity
-# extract the sentences that are closest to the centroid of each cluster are considered to be the most representative sentences
-# but still not accurate for part of the data (pending on fix, also the formatting)
 class ContentSummaryTextGenerator(TextGenerator):
-    # def __init__(self, text):
-    #     self.metadata = {'text': text}
-    #     self.nlp = spacy.load('en_core_web_md')
-        
-    # def generate(self):
-    #     if 'text' not in self.metadata:
-    #         return ''
-    #     text = self.metadata['text']
-    #     doc = self.nlp(text)
-    #     sentences = [sent.text for sent in doc.sents]
-        
-    #     # Use TF-IDF vectorization to extract important phrases from the text
-    #     vectorizer = TfidfVectorizer(stop_words='english')
-    #     X = vectorizer.fit_transform(sentences)
-    #     feature_names = np.array(vectorizer.get_feature_names())
-    #     kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
-        
-    #     # Identify the most important phrases based on the centroid of each cluster
-    #     centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
-    #     important_phrases = []
-    #     for i in range(3):
-    #         cluster_indices = np.where(kmeans.labels_ == i)[0]
-    #         important_phrases.append(feature_names[centroids[i, :5]])
-        
-    #     # Summarize the text by including the sentences that contain important phrases
-    #     summary = [sentence for sentence in sentences if len(sentence.split()) > 5 and any(phrase in sentence.lower() for phrase in important_phrases)]
-    #     return ' '.join(summary)
     def generate(self):
-        if 'text' not in self.metadata:
+        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '') and (len(self.metadata['text']) < 1000)
+        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '') and (len(self.metadata['desc']) < 1000)
+        if (text_flag and desc_flag):
+            text = self.metadata['text'].replace('\n', ' ') + ' ' + self.metadata['desc'].replace('\n', ' ')
+        elif (text_flag):
+            text = self.metadata['text'].replace('\n', ' ')
+        elif (desc_flag):
+            text = self.metadata['desc'].replace('\n', ' ')
+        else:
             return ''
-
-        doc = nlp(self.metadata['text'])
-        output = []
-        for sentence in doc.sents:
-        # check if the sentence contains at least one non-stopword token
-            if not any(token.is_stop == False for token in sentence):
-                continue
-            
-        # check if the first token is a proper noun (capitalized)
-            if not sentence[0].is_title:
-                continue
-        
-        # check if the sentence contains any digits or capitalized words
-            if any(token.is_digit or token.is_upper for token in sentence):
-                continue
-        
-        # add the sentence text to the output
-            output.append(str(sentence))
-        
-        return '\n'.join(output)
+        response = openai.Completion.create(
+            model="gpt-3.5-turbo",
+            prompt = "Summarize the following text:\n\n" + text,
+            temperature=0.7,
+            max_tokens=100,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+        summary = response.choices[0].text
+        print(response)
+        return summary
     
+
 
 # BONUS: Create a subclass that combines elements from all other subclasses to generate text of variable length.
 # Number of words need not be exact. A variance of up to 20% should be allowable
 # (i.e. if words=50, generate(words=50) can return 40 to 60 words).
-#class ContentSummaryTextGenerator(TextGenerator):
+class ContentSummaryTextGenerator(TextGenerator):
+    def generate(self, words=20):
+        pass
 
 
-# This is an example of a text generator subclass instantiation. All text generator subclasses require the file path
-# to metadata.
 
-for i in range(10):
-    desc_generator = ContentSummaryTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+openai.api_key = "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"
+
+for i in range(1000):
+    desc_generator = NavDescriptionTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
     print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
 
+# a = ContentSummaryTextGenerator('./data/0021/metadata.json')
+# print(a.generate())
