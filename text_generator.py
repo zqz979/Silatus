@@ -7,8 +7,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
-import spacy
-
+from transformers import pipeline
 import openai
 
 ### USE the following command to download model
@@ -218,8 +217,8 @@ class NavDescriptionTextGenerator(TextGenerator):
 # words).
 class ContentSummaryTextGenerator(TextGenerator):
     def generate(self):
-        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '') and (len(self.metadata['text']) < 1000)
-        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '') and (len(self.metadata['desc']) < 1000)
+        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '')
+        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '')
         if (text_flag and desc_flag):
             text = self.metadata['text'].replace('\n', ' ') + ' ' + self.metadata['desc'].replace('\n', ' ')
         elif (text_flag):
@@ -228,9 +227,11 @@ class ContentSummaryTextGenerator(TextGenerator):
             text = self.metadata['desc'].replace('\n', ' ')
         else:
             return ''
+                
+        prompt = "Please summarize the following description and text data from a website:\n\n" + text
         response = openai.Completion.create(
-            model="gpt-3.5-turbo",
-            prompt = "Summarize the following text:\n\n" + text,
+            model="text-davinci-003",
+            prompt=prompt,
             temperature=0.7,
             max_tokens=100,
             top_p=1,
@@ -238,25 +239,43 @@ class ContentSummaryTextGenerator(TextGenerator):
             presence_penalty=0
         )
         summary = response.choices[0].text
-        print(response)
+        
         return summary
-    
 
 
 # BONUS: Create a subclass that combines elements from all other subclasses to generate text of variable length.
 # Number of words need not be exact. A variance of up to 20% should be allowable
 # (i.e. if words=50, generate(words=50) can return 40 to 60 words).
-class ContentSummaryTextGenerator(TextGenerator):
-    def generate(self, words=20):
-        pass
+# class ContentSummaryTextGenerator(TextGenerator):
+#     def generate(self, words=20):
+#         pass
+
+class ContentSummaryTransformerTextGenerator(TextGenerator):
+    def generate(self):
+        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '')
+        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '')
+        if (text_flag and desc_flag):
+            text = self.metadata['text'].replace('\n', ' ') + ' ' + self.metadata['desc'].replace('\n', ' ')
+        elif (text_flag):
+            text = self.metadata['text'].replace('\n', ' ')
+        elif (desc_flag):
+            text = self.metadata['desc'].replace('\n', ' ')
+        else:
+            return ''
+        summarizer = pipeline("summarization", model="knkarthick/MEETING_SUMMARY")
+        
+        return summarizer(text, max_length=256)
 
 
+openai.api_key = "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"
 
-openai.api_key = "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"
-
-for i in range(1000):
-    desc_generator = NavDescriptionTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+for i in range(0):
+    desc_generator = NoProperNounsTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
     print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
 
-# a = ContentSummaryTextGenerator('./data/0021/metadata.json')
+a = ContentSummaryTextGenerator('./data/0021/metadata.json')
+print(a.generate())
+
+
+# a = ContentSummaryTransformerTextGenerator('./data/0021/metadata.json')
 # print(a.generate())
