@@ -7,7 +7,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
-from transformers import pipeline
 import openai
 
 ### USE the following command to download model
@@ -51,25 +50,14 @@ def get_readable_relative_position(position):
     # Corner positions
     if position['horizontal'] == -2 and position['vertical'] == -2:
         text_position += 'top left corner'
-    elif position['horizontal'] == 2 and position['vertical'] == -2:
-        text_position += 'top right corner'
-    elif position['horizontal'] == -2 and position['vertical'] == 2:
-        text_position += 'bottom left corner'
-    elif position['horizontal'] == 2 and position['vertical'] == 2:
-        text_position += 'bottom right corner'
-    # Edge positions (non-corner)
     elif position['horizontal'] == -1 and position['vertical'] == -2:
         text_position += 'top and left center'
     elif position['horizontal'] == 0 and position['vertical'] == -2:
         text_position += 'top center'
     elif position['horizontal'] == 1 and position['vertical'] == -2:
         text_position += 'top and right center'
-    elif position['horizontal'] == -1 and position['vertical'] == 2:
-        text_position += 'bottom and left center'
-    elif position['horizontal'] == 0 and position['vertical'] == 2:
-        text_position += 'bottom center'
-    elif position['horizontal'] == 1 and position['vertical'] == 2:
-        text_position += 'bottom and right center'
+    elif position['horizontal'] == 2 and position['vertical'] == -2:
+        text_position += 'top right corner'
     elif position['horizontal'] == -2 and position['vertical'] == -1:
         text_position += 'left edge and above center'
     elif position['horizontal'] == -2 and position['vertical'] == 0:
@@ -82,6 +70,33 @@ def get_readable_relative_position(position):
         text_position += 'right edge and vertical center'
     elif position['horizontal'] == 2 and position['vertical'] == 1:
         text_position += 'right edge and below center'
+    elif position['horizontal'] == -2 and position['vertical'] == 2:
+        text_position += 'bottom left corner'
+    elif position['horizontal'] == -1 and position['vertical'] == 2:
+        text_position += 'bottom and left center'
+    elif position['horizontal'] == 0 and position['vertical'] == 2:
+        text_position += 'bottom center'
+    elif position['horizontal'] == 1 and position['vertical'] == 2:
+        text_position += 'bottom and right center'
+    elif position['horizontal'] == 2 and position['vertical'] == 2:
+        text_position += 'bottom right corner'
+    # Edge positions (non-corner)
+    elif position['horizontal'] == -1 and position['vertical'] == -1:
+        text_position += 'above and to the left of center'
+    elif position['horizontal'] == 0 and position['vertical'] == -1:
+        text_position += 'above and center-left of center'
+    elif position['horizontal'] == 1 and position['vertical'] == -1:
+        text_position += 'above and to the right of center'
+    elif position['horizontal'] == -1 and position['vertical'] == 1:
+        text_position += 'below and to the left of center'
+    elif position['horizontal'] == 0 and position['vertical'] == 1:
+        text_position += 'below and center-left of center'
+    elif position['horizontal'] == 1 and position['vertical'] == 1:
+        text_position += 'below and to the right of center'
+    elif position['horizontal'] == -1 and position['vertical'] == 0:
+        text_position += 'left of center'
+    elif position['horizontal'] == 1 and position['vertical'] == 0:
+        text_position += 'right of center'
     # center position
     elif position['horizontal'] == 0 and position['vertical'] == 0:
         text_position += 'center'
@@ -95,7 +110,6 @@ class TextGenerator(ABC):
     def __init__(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as f: #fixed using utf-8
             self.metadata = load(f)
-
     @abstractmethod
     def generate(self):
         pass
@@ -156,7 +170,8 @@ class ObjectLocationTextGenerator(TextGenerator):
                 # Skip images that are not on screen
                 if not image['is_displayed']:
                     continue
-                images.append('an image of ' + image['alt'] + ' in the ' + get_readable_relative_position(image['position']))
+                if 'alt' in image and image['alt'] != '':
+                    images.append('an image of ' + image['alt'] + ' in the ' + get_readable_relative_position(image['position']))
         
         # process buttons
         buttons = []
@@ -167,9 +182,9 @@ class ObjectLocationTextGenerator(TextGenerator):
                 # Skip buttons that are not on screen
                 if not button['is_displayed']:
                     continue                
-                if 'alt' in button:
+                if 'alt' in button and button['alt'] != '':
                     buttons.append('an ' + button["bg-color"] + ' colored button of ' + button['alt'] + ' in the ' + get_readable_relative_position(button['position']))
-                else:
+                elif 'text' in button and button['text'] != '':
                     buttons.append('an ' + button["bg-color"] + ' colored button of ' + button['text'] + ' in the ' + get_readable_relative_position(button['position']))
         
         inputs = []
@@ -179,8 +194,9 @@ class ObjectLocationTextGenerator(TextGenerator):
             for input in self.metadata['inputs']:
                 # Skip inputs that are not on screen
                 if not input['is_displayed'] or input['type'] == 'hidden':
-                    continue                
-                buttons.append('an input field of ' + input['desc'] + ' in the ' + get_readable_relative_position(input['position']))
+                    continue
+                if 'desc' in input and input['desc'] != '':
+                    buttons.append('an input field of ' + input['desc'] + ' in the ' + get_readable_relative_position(input['position']))
 
         iframes = []
         if 'iframes' not in self.metadata:
@@ -190,10 +206,11 @@ class ObjectLocationTextGenerator(TextGenerator):
                 # Skip inputs that are not on screen
                 if not iframe['is_displayed']:
                     continue
-                if not iframe['is_video']:
-                    iframes.append('a non-video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
-                else:
-                    iframes.append('a video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
+                if 'title' in iframe and iframe['title'] != '':
+                    if not iframe['is_video']:
+                        iframes.append('a non-video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
+                    else:
+                        iframes.append('a video iframe of ' + iframe['title'] + ' in the ' + get_readable_relative_position(iframe['position']))
 
         return images, buttons, inputs, iframes
 
@@ -216,24 +233,37 @@ class NavDescriptionTextGenerator(TextGenerator):
 # works well). Feel free to use any public NLP APIs, as long as they are free or very affordable (< $0.01 per 500
 # words).
 class ContentSummaryTextGenerator(TextGenerator):
-    def generate(self):
-        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '')
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self.file_path = file_path
+        
+    def generate(self, words=20):
+        list = []
+        # list.append(generate_sentence_prefix())
         desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '')
-        if (text_flag and desc_flag):
-            text = self.metadata['text'].replace('\n', ' ') + ' ' + self.metadata['desc'].replace('\n', ' ')
-        elif (text_flag):
-            text = self.metadata['text'].replace('\n', ' ')
-        elif (desc_flag):
-            text = self.metadata['desc'].replace('\n', ' ')
-        else:
-            return ''
-                
-        prompt = "Please summarize the following description and text data from a website:\n\n" + text
+        if desc_flag:
+            desc_text_generator = NoProperNounsTextGenerator(self.file_path)
+            desc_text = desc_text_generator.generate()
+            list.append(desc_text.replace('\n', ' '))
+        desc_text_generator = ObjectLocationTextGenerator(self.file_path)
+        images, buttons, inputs, iframes = desc_text_generator.generate()
+        if images:
+            list.appned(images)
+        if buttons:
+            list.append(buttons)
+        if inputs:
+            list.append(inputs)
+        if iframes:
+            list.append(iframes)
+
+        text = ','.join(list)
+        
+        prompt = "Here are description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build.:\n\n" + text
         response = openai.Completion.create(
             model="text-davinci-003",
             prompt=prompt,
             temperature=0.7,
-            max_tokens=100,
+            max_tokens=words,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0
@@ -243,39 +273,11 @@ class ContentSummaryTextGenerator(TextGenerator):
         return summary
 
 
-# BONUS: Create a subclass that combines elements from all other subclasses to generate text of variable length.
-# Number of words need not be exact. A variance of up to 20% should be allowable
-# (i.e. if words=50, generate(words=50) can return 40 to 60 words).
-# class ContentSummaryTextGenerator(TextGenerator):
-#     def generate(self, words=20):
-#         pass
-
-class ContentSummaryTransformerTextGenerator(TextGenerator):
-    def generate(self):
-        text_flag = ('text' in self.metadata) and (self.metadata['text'] != '')
-        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '')
-        if (text_flag and desc_flag):
-            text = self.metadata['text'].replace('\n', ' ') + ' ' + self.metadata['desc'].replace('\n', ' ')
-        elif (text_flag):
-            text = self.metadata['text'].replace('\n', ' ')
-        elif (desc_flag):
-            text = self.metadata['desc'].replace('\n', ' ')
-        else:
-            return ''
-        summarizer = pipeline("summarization", model="knkarthick/MEETING_SUMMARY")
-        
-        return summarizer(text, max_length=256)
-
-
 openai.api_key = "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"
 
 for i in range(0):
-    desc_generator = NoProperNounsTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+    desc_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
     print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
-
-a = ContentSummaryTextGenerator('./data/0021/metadata.json')
-print(a.generate())
-
-
-# a = ContentSummaryTransformerTextGenerator('./data/0021/metadata.json')
-# print(a.generate())
+    
+a = ContentSummaryTextGenerator('./data/0949/metadata.json')
+print(a.generate(words=256))
