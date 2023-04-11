@@ -9,11 +9,6 @@ from json import load
 
 import openai
 
-### USE the following command to download model
-### python -m spacy download en_core_web_trf ###
-
-# nlp = spacy.load("en_core_web_trf")
-
 def generate_sentence_prefix():
     all_synonyms = {
         'website': ['site', 'page', 'webpage', 'web page', 'internet site', 'Internet website', 'online page'],
@@ -162,14 +157,18 @@ class NoProperNounsTextGenerator(TextGenerator):
 class ObjectLocationTextGenerator(TextGenerator):
     def generate(self):
         # Process images
+        # A list to hold description of images
         images = []
+        # pass websites without images
         if 'images' not in self.metadata:
             pass
         else:
+            # loop through each image
             for image in self.metadata['images']:
                 # Skip images that are not on screen
                 if not image['is_displayed']:
                     continue
+                # The description of image should not be empty
                 if 'alt' in image and image['alt'] != '':
                     images.append('an image of ' + image['alt'] + ' in the ' + get_readable_relative_position(image['position']))
         
@@ -238,46 +237,75 @@ class ContentSummaryTextGenerator(TextGenerator):
         self.file_path = file_path
         
     def generate(self, words=20):
-        list = []
-        # list.append(generate_sentence_prefix())
-        desc_flag = ('desc' in self.metadata) and (self.metadata['desc'] != '')
-        if desc_flag:
+        desc_text = ''
+        if ('desc' in self.metadata) and (self.metadata['desc'] != ''):
             desc_text_generator = NoProperNounsTextGenerator(self.file_path)
             desc_text = desc_text_generator.generate()
-            list.append(desc_text.replace('\n', ' '))
+        
+        navbar = ''
+        if ('navbar' in self.metadata) and (self.metadata['navbar'] != ''):
+            navbar_desc_generator = NoProperNounsTextGenerator(self.file_path)
+            navbar_desc = navbar_desc_generator.generate()
+                
         desc_text_generator = ObjectLocationTextGenerator(self.file_path)
         images, buttons, inputs, iframes = desc_text_generator.generate()
-        if images:
-            list.appned(images)
-        if buttons:
-            list.append(buttons)
-        if inputs:
-            list.append(inputs)
-        if iframes:
-            list.append(iframes)
-
-        text = ','.join(list)
+                
+        # prompt = "Here are description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build.:\n\n" + text
+        # response = openai.Completion.create(
+        #     model="text-davinci-003",
+        #     prompt=prompt,
+        #     temperature=0.7,
+        #     max_tokens=words,
+        #     top_p=1,
+        #     frequency_penalty=0,
+        #     presence_penalty=0
+        # )
         
-        prompt = "Here are description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build.:\n\n" + text
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=prompt,
-            temperature=0.7,
-            max_tokens=words,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
+        messages = [
+                {"role": "system", "content": "You are writing descriptions of landing pages so a software consulting firm can use those descriptions to build a landing page."},
+                {"role": "user", "content": "I will first give you a description of the landing page. Then I will give you the objects on the landing page step by step."},
+                {"role": "assistant", "content": "Okay."},
+                {"role": "user", "content": "The following text is the description of the landing page: " + desc_text},
+                {"role": "assistant", "content": "I got the desciption."},
+                {"role": "user", "content": "The following text describes the images: " + '.'.join(images)},
+                {"role": "assistant", "content": "I got images."},
+                {"role": "user", "content": "The following text describes the buttons: " + '.'.join(buttons)},
+                {"role": "assistant", "content": "I got buttons."},
+                {"role": "user", "content": "The following text describes the input fields: " + '.'.join(inputs)},
+                {"role": "assistant", "content": "I got input fields."},
+                {"role": "user", "content": "The following text describes the iframes: " + '.'.join(iframes)},
+                {"role": "assistant", "content": "I got buttons."},
+                {"role": "user", "content": "I have gave to you description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build"},
+
+        ]
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages= messages,
+            temperature=0,
+            max_tokens=words
         )
-        summary = response.choices[0].text
+        
+        summary = response.choices[0].message.content
         
         return summary
 
 
 openai.api_key = "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"
 
-for i in range(0):
-    desc_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
-    print(f'Metadata {str(i+1).zfill(4)}: ', desc_generator.generate())
+def get_best_examples():
+    for i in range(0):
+        desc_generator = NoProperNounsTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+        desc = desc_generator.generate()
+        navbar_generator = NavDescriptionTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+        navbar = navbar_generator.generate()
+        objects_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+        images, buttons, inputs, iframes = objects_generator.generate()
+        if (desc and navbar and images and buttons):
+            print(f'Metadata {str(i+1).zfill(4)} is good')
+
+# 5, 10
     
-a = ContentSummaryTextGenerator('./data/0949/metadata.json')
+a = ContentSummaryTextGenerator('./data/0010/metadata.json')
 print(a.generate(words=256))
+ 
