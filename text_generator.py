@@ -7,7 +7,8 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from json import load
 
-import openai
+import openai, os
+
 
 def generate_sentence_prefix():
     all_synonyms = {
@@ -195,7 +196,7 @@ class ObjectLocationTextGenerator(TextGenerator):
                 if not input['is_displayed'] or input['type'] == 'hidden':
                     continue
                 if 'desc' in input and input['desc'] != '':
-                    buttons.append('an input field of ' + input['desc'] + ' in the ' + get_readable_relative_position(input['position']))
+                    inputs.append('an input field of ' + input['desc'] + ' in the ' + get_readable_relative_position(input['position']))
 
         iframes = []
         if 'iframes' not in self.metadata:
@@ -236,7 +237,7 @@ class ContentSummaryTextGenerator(TextGenerator):
         super().__init__(file_path)
         self.file_path = file_path
         
-    def generate(self, words=20):
+    def generate(self, words=None):
         desc_text = ''
         if ('desc' in self.metadata) and (self.metadata['desc'] != ''):
             desc_text_generator = NoProperNounsTextGenerator(self.file_path)
@@ -250,23 +251,15 @@ class ContentSummaryTextGenerator(TextGenerator):
         desc_text_generator = ObjectLocationTextGenerator(self.file_path)
         images, buttons, inputs, iframes = desc_text_generator.generate()
                 
-        # prompt = "Here are description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build.:\n\n" + text
-        # response = openai.Completion.create(
-        #     model="text-davinci-003",
-        #     prompt=prompt,
-        #     temperature=0.7,
-        #     max_tokens=words,
-        #     top_p=1,
-        #     frequency_penalty=0,
-        #     presence_penalty=0
-        # )
         
         messages = [
                 {"role": "system", "content": "You are writing descriptions of landing pages so a software consulting firm can use those descriptions to build a landing page."},
-                {"role": "user", "content": "I will first give you a description of the landing page. Then I will give you the objects on the landing page step by step."},
+                {"role": "user", "content": "I will first give you a description of the landing page. Then I will give you the description and locations of objects on the landing page step by step."},
                 {"role": "assistant", "content": "Okay."},
                 {"role": "user", "content": "The following text is the description of the landing page: " + desc_text},
                 {"role": "assistant", "content": "I got the desciption."},
+                {"role": "user", "content": "The following text contains the options of navigation bar: " + navbar},
+                {"role": "assistant", "content": "I got the options in the navigation bar."},
                 {"role": "user", "content": "The following text describes the images: " + '.'.join(images)},
                 {"role": "assistant", "content": "I got images."},
                 {"role": "user", "content": "The following text describes the buttons: " + '.'.join(buttons)},
@@ -274,10 +267,14 @@ class ContentSummaryTextGenerator(TextGenerator):
                 {"role": "user", "content": "The following text describes the input fields: " + '.'.join(inputs)},
                 {"role": "assistant", "content": "I got input fields."},
                 {"role": "user", "content": "The following text describes the iframes: " + '.'.join(iframes)},
-                {"role": "assistant", "content": "I got buttons."},
-                {"role": "user", "content": "I have gave to you description and some objects of a website. Share with me a generic description of this website as if you were explaining to a software consulting firm what you want them to build"},
-
+                {"role": "assistant", "content": "I got iframes."},
+                {"role": "user", "content": "Share with me a generic description of this landing page as if you were explaining to a software consulting firm what you want them to build. Include what they are and where they should be. "},
         ]
+        
+        # Replace OPENAI_API_KEY with your own secret API key envrionment variable
+        # Or you can use the following line to set your API key
+        # openai.api_key = "YOUR_API_KEY"
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
         
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -291,21 +288,55 @@ class ContentSummaryTextGenerator(TextGenerator):
         return summary
 
 
-openai.api_key = "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"
 
 def get_best_examples():
-    for i in range(0):
+    """
+    Function to get the best examples that from the dataset
+    Best examples are the ones that have all the generators returing non-empty values
+    """
+    for i in range(1000):
         desc_generator = NoProperNounsTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
         desc = desc_generator.generate()
         navbar_generator = NavDescriptionTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
         navbar = navbar_generator.generate()
         objects_generator = ObjectLocationTextGenerator(f'./data/{str(i+1).zfill(4)}/metadata.json')
         images, buttons, inputs, iframes = objects_generator.generate()
-        if (desc and navbar and images and buttons):
-            print(f'Metadata {str(i+1).zfill(4)} is good')
+        if (desc and navbar and images and buttons and inputs and iframes):
+            print(f'Metadata {str(i+1).zfill(4)} has everything')
+        
 
-# 5, 10
+
     
-a = ContentSummaryTextGenerator('./data/0010/metadata.json')
-print(a.generate(words=256))
- 
+def test_generators(generator, num_examples=1000, example_id = 0):
+    """
+    Function to test the generators EXCEPT for the ContentSummaryTextGenerator
+    It prints the output of the selected generator on the console.
+    Args:
+        generator (TextGenerator): various classes of TextGenerator with different functionalities. 
+        num_examples (int, optional): controls how many example metadata to use. Defaults to 1000.
+        example_id (int, optional): if provided as non-zero, only test the result on one example. Defaults to 0.
+    """
+    if example_id:
+        x = generator(f'./data/{str(example_id).zfill(4)}/metadata.json')
+        print(x.generate())
+    else:
+        for i in range(num_examples):
+            x = generator(f'./data/{str(i+1).zfill(4)}/metadata.json')
+            print(x.generate())
+
+def test_summarization(example_id, words = None):
+    """
+    Test summary generator
+
+    Args:
+        example_id (int): id of the example to test
+        words (int, optional): max tokens that GPT can return. Defaults to None puts no limits.
+    """
+    x = ContentSummaryTextGenerator(f'./data/{str(example_id).zfill(4)}/metadata.json')
+    print(x.generate(words))
+
+
+if __name__ == '__main__':
+    # get_best_examples()
+    test_summarization(333)
+
