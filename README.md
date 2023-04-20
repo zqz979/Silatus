@@ -16,8 +16,11 @@ Project description
 Convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 Requirements
+
 Python 3.7+
+
 NLTK
+
 OpenAI API (GPT-3.5-turbo)
 
 ### Demo
@@ -42,6 +45,7 @@ The landing page should have an iframe section that displays the upcoming events
 The landing page should have an input field that allows users to subscribe to the newsletter. The input field should be placed in a prominent location and should be easy to use. Overall, the landing page should be designed in a way that is visually appealing and easy to navigate. The content should be organized in a way that is easy to understand and should be optimized for search engines.
 
 Contributing
+
 We welcome contributions to improve and expand the functionality of the Automated Landing Page Description Generator. To contribute, please follow these steps:
 Fork the repository.
 Create a branch with a descriptive name, e.g., feature/new-generator-class.
