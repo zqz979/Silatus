@@ -1,4 +1,5 @@
-# Silatus(Automated Landing Page Description Generator)
+# Silatus
+Automated Landing Page Description Generator
 
 
 ### Introduction
