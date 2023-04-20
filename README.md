@@ -51,7 +51,6 @@ https://github.com/zqz979/Silatus.git
 ```
 2. Download the required NLTK data:
 ```python
-import nltk
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('stopwords')
