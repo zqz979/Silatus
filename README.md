@@ -47,7 +47,29 @@ The landing page should have an input field that allows users to subscribe to th
 ### Installation
 1. Clone the repository:
 ```python
-print("Hello, world!")
+https://github.com/zqz979/Silatus.git
+```
+2. Download the required NLTK data:
+```python
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
+```
+3. Install the required packages:
+```python
+import nltk
+import openai,os
+import python-dotenv
+```
+4. Set up the OpenAI API key:
+
+Sign up for an OpenAI API key.
+Create a .env file in the project directory and add the following line, replacing YOUR_API_KEY with your OpenAI API key:
+```python
+OPENAI_API_KEY=YOUR_API_KEY
+```
+
 ### Contributing
 We welcome contributions to improve and expand the functionality of the Automated Landing Page Description Generator. To contribute, please follow these steps:
 Fork the repository.
