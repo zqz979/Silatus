@@ -2,12 +2,13 @@
 Project description:Convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 
-##Introduction
+## Introduction
 
 
 
 
-##Demo
+
+## Demo
 
 Given metadata of this website
 ![image](https://user-images.githubusercontent.com/71195307/233437412-fd8343a7-ee77-4034-88fe-f451f48cbccf.png)
