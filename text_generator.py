@@ -257,7 +257,7 @@ class ContentSummaryTextGenerator(TextGenerator):
                 {"role": "user", "content": "I will first give you a description of the landing page. Then I will give you the description and locations of objects on the landing page step by step."},
                 {"role": "assistant", "content": "Okay."},
                 {"role": "user", "content": "The following text is the description of the landing page: " + desc_text},
-                {"role": "assistant", "content": "I got the desciption."},
+                {"role": "assistant", "content": "I got the description."},
                 {"role": "user", "content": "The following text contains the options of navigation bar: " + navbar},
                 {"role": "assistant", "content": "I got the options in the navigation bar."},
                 {"role": "user", "content": "The following text describes the images: " + '.'.join(images)},
