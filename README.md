@@ -28,3 +28,10 @@ Sure, based on the information you provided, I would like the software consultin
 `Output:`<br>
 Sure, here's a generic description of the landing page:
 The landing page should have a navigation bar with the following options: Home, About Us, Products, Services, and Contact Us. The landing page should have an image of a rocket or spacecraft in the background to convey the company's focus on space technology. There should be a button to learn more about the company's mission and a button to view their products. The landing page should also have an input field for users to sign up for the company's newsletter. Finally, there should be an iframe displaying a video of a rocket launch or a spacecraft in orbit to further emphasize the company's expertise in space technology.
+`Website for a theatre:`<br>
+![screenshot](https://user-images.githubusercontent.com/97744180/233455058-956d8fea-ccd5-4115-869b-164d4547ca01.png)
+Sure, here's a generic description of the landing page:
+The landing page should have a navigation bar with the following options: Home, About Us, Services, Portfolio, and Contact Us. The landing page should also have an input field of SEARCH in the top right corner.
+The landing page should have an image section that showcases the performing arts. The images should be placed in a visually appealing manner and should be clickable.
+The landing page should have an iframe section that displays the upcoming events. The iframes should be placed in a way that is easy to navigate and should be clickable
+The landing page should have an input field that allows users to subscribe to the newsletter. The input field should be placed in a prominent location and should be easy to use. Overall, the landing page should be designed in a way that is visually appealing and easy to navigate. The content should be organized in a way that is easy to understand and should be optimized for search engines.
