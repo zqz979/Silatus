@@ -44,6 +44,10 @@ The landing page should have an image section that showcases the performing arts
 The landing page should have an iframe section that displays the upcoming events. The iframes should be placed in a way that is easy to navigate and should be clickable
 The landing page should have an input field that allows users to subscribe to the newsletter. The input field should be placed in a prominent location and should be easy to use. Overall, the landing page should be designed in a way that is visually appealing and easy to navigate. The content should be organized in a way that is easy to understand and should be optimized for search engines.
 
+### Installation
+1. Clone the repository:
+```python
+print("Hello, world!")
 ### Contributing
 We welcome contributions to improve and expand the functionality of the Automated Landing Page Description Generator. To contribute, please follow these steps:
 Fork the repository.
