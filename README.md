@@ -1,5 +1,4 @@
 # Silatus(Automated Landing Page Description Generator)
-Project description:Convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 
 ### Introduction
@@ -11,6 +10,9 @@ By leveraging the capabilities of the GPT-3.5-turbo or GPT-4 model from OpenAI, 
 
 With the Automated Landing Page Description Generator, web developers and designers can streamline their workflow, ensuring that they can effectively communicate their visions for landing pages and facilitate a seamless development process.
 
+
+###Project description
+Convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 
 
