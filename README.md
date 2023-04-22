@@ -68,12 +68,3 @@ Create a .env file in the project directory and add the following line, replacin
 ```python
 OPENAI_API_KEY=YOUR_API_KEY
 ```
-
-### Contributing
-We welcome contributions to improve and expand the functionality of the Automated Landing Page Description Generator. To contribute, please follow these steps:
-Fork the repository.
-Create a branch with a descriptive name, e.g., feature/new-generator-class.
-Make your changes and commit them with informative commit messages.
-Push your changes to the branch.
-Create a pull request to the main repository.
-
