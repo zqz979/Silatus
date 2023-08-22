@@ -12,6 +12,7 @@ By using the capabilities of the GPT-3.5-turbo or GPT-4 model from OpenAI, the p
 With the Landing Page Generator, web developers and designers can streamline their workflow, ensuring that they can effectively communicate their thoughts for landing pages and facilitate a seamless development process.
 
 Project Description
+
 Our project convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 
