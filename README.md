@@ -3,17 +3,18 @@ Automated Landing Page Description Generator
 
 
 ### Introduction
-In today's fast-paced digital world, businesses and organizations are increasingly relying on efficient and engaging web presences to attract and retain customers. Landing pages play a crucial role in this process by providing a first impression and driving user engagement. Creating informative and appealing descriptions for landing pages is essential for web developers and designers to effectively convey their ideas to clients or teammates.
+In today's fast-paced digital world, companies and organizations are strongly relying on efficient web presences to attract and retain customers. Landing pages play a crucial role in this process by providing a first impression and driving user attention. Creating meanningful and appealing descriptions for landing pages is essential and important for web developers and designers to effectively delievery their ideas to clients or teammates.
 
-The "Automated Landing Page Description Generator" project aims to simplify this process by utilizing natural language processing techniques and state-of-the-art AI models. The project consists of a collection of Python classes that work together to generate comprehensive and human-readable descriptions for landing pages based on metadata. These descriptions include various components, such as text content, navigation bars, images, buttons, input fields, and iframes, along with their positions and colors.
+The "Automated Landing Page Description Generator" project focus to simplify this process by utilizing natural language processing techniques and state-of-the-art AI models. The project consists of a collection of Python functions that work together to generate comprehensive and understandable descriptions for landing pages based on metadata. These descriptions include various feature, such as text content, navigation bars, images, buttons, input fields, and iframes, along with their positions and colors.
 
-By leveraging the capabilities of the GPT-3.5-turbo or GPT-4 model from OpenAI, the project is able to generate summaries of the landing pages that mimic a conversation between a user and an assistant. This interactive approach provides an intuitive way to understand the structure and content of the landing page, making it easier for software consulting firms or development teams to build the desired web presence.
+By using the capabilities of the GPT-3.5-turbo or GPT-4 model from OpenAI, the project is capable to generate summaries of the landing pages that mimic a conversation between a user and an virtue assistant. Our interactive method provides an intuitive way to understand the structure and content of the landing page, making it easier for technical or trade companies to build the website.
 
-With the Automated Landing Page Description Generator, web developers and designers can streamline their workflow, ensuring that they can effectively communicate their visions for landing pages and facilitate a seamless development process.
+With the Landing Page Generator, web developers and designers can streamline their workflow, ensuring that they can effectively communicate their thoughts for landing pages and facilitate a seamless development process.
+
+Project Description
+Our project convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 
-Project description
-Convert website metadata into text prompts to serve as input for a generative AI model. The metadata includes information like descriptions and relative locations of images, videos, and text inputs on a website. The text prompts are to be verbal descriptions of the website.
 
 ### Requirements
 
